@@ -1,103 +1,194 @@
+"use client";
+
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { buildPoseidon } from "circomlibjs";
+// import { create as ipfsHttpClient } from "ipfs-http-client"; // Optionally update to Helia or ipfs-http-client@60.0.0
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [step, setStep] = useState<"welcome"|"connected"|"zk1"|"zk2"|"submitted">("welcome");
+  const [wallet, setWallet] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: "",
+    feasibility: "",
+    budget: "",
+    innovation: "",
+    attachment: null as File | null,
+    attachmentUrl: ""
+  });
+  const [loading, setLoading] = useState(false);
+  const [poseidon, setPoseidon] = useState<any>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    buildPoseidon().then(setPoseidon);
+  }, []);
+
+  // Mock wallet connect
+  const connectWallet = async () => {
+    setLoading(true);
+    setTimeout(() => {
+      setWallet("0xDEADBEEF");
+      setStep("connected");
+      setLoading(false);
+    }, 1000);
+  };
+
+  // Handle form field changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value, files } = e.target as any;
+    if (name === "attachment" && files && files[0]) {
+      setForm(f => ({ ...f, attachment: files[0] }));
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
+    }
+  };
+
+  // Handle form submit
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  let attachmentUrl = "";
+
+  try {
+    // Validate required fields
+    if (
+      !form.name ||
+      isNaN(Number(form.feasibility)) ||
+      isNaN(Number(form.budget)) ||
+      isNaN(Number(form.innovation))
+    ) {
+      alert("Please fill in all fields correctly.");
+      setLoading(false);
+      return;
+    }
+
+    // Mock IPFS upload
+    if (form.attachment) {
+      attachmentUrl = `ipfs://${form.attachment.name}`;
+    }
+
+    // Ensure poseidon is loaded
+    if (!poseidon) {
+      alert("Poseidon hash function is still loading. Try again in a second.");
+      setLoading(false);
+      return;
+    }
+
+    // Create hash
+    const hash = poseidon([
+      form.name.length,
+      Number(form.feasibility),
+      Number(form.budget),
+      Number(form.innovation)
+    ]).toString();
+
+    const calldata = { hash, attachmentUrl };
+
+    // Mock contract call
+    setTimeout(() => {
+      setStep("submitted");
+      setLoading(false);
+    }, 1200);
+  } catch (err) {
+    console.error("Error during submission:", err);
+    alert("Something went wrong. Check the console for details.");
+    setLoading(false);
+  }
+};
+
+
+  // UI
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-100 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-8 flex flex-col gap-6">
+        {step === "welcome" && (
+          <>
+            <h1 className="text-2xl font-bold text-center mb-2">Welcome to the zkTender!</h1>
+            <p className="text-center text-gray-600 mb-4">You are about to start your proposal. Please be sure you have a Braavos or Argent wallet.</p>
+            <button
+              className="w-full py-2 px-4 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition"
+              onClick={connectWallet}
+              disabled={loading}
+            >
+              {loading ? "Connecting..." : "Connect Wallet"}
+            </button>
+          </>
+        )}
+        {step === "connected" && (
+          <>
+            <div className="text-green-600 font-semibold text-center mb-2">Success! Wallet connected.</div>
+            <div className="flex gap-4 justify-center">
+              <button className="py-2 px-4 bg-blue-500 text-white rounded-lg hover:bg-blue-600" onClick={() => setStep("zk1")}>zk1</button>
+              <button className="py-2 px-4 bg-purple-500 text-white rounded-lg hover:bg-purple-600" onClick={() => setStep("zk2")}>zk2</button>
+            </div>
+          </>
+        )}
+        {(step === "zk1" || step === "zk2") && (
+          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+            <h2 className="text-xl font-bold mb-2">Submit Proposal ({step.toUpperCase()})</h2>
+            <input
+              className="border rounded px-3 py-2"
+              name="name"
+              placeholder="Name"
+              value={form.name}
+              onChange={handleChange}
+              required
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <input
+              className="border rounded px-3 py-2"
+              name="feasibility"
+              placeholder="Feasibility Score (0-10)"
+              type="number"
+              min="0"
+              max="10"
+              value={form.feasibility}
+              onChange={handleChange}
+              required
+            />
+            <input
+              className="border rounded px-3 py-2"
+              name="budget"
+              placeholder="Budget Estimate (USD)"
+              type="number"
+              min="0"
+              value={form.budget}
+              onChange={handleChange}
+              required
+            />
+            <input
+              className="border rounded px-3 py-2"
+              name="innovation"
+              placeholder="Innovation Rating (0-10)"
+              type="number"
+              min="0"
+              max="10"
+              value={form.innovation}
+              onChange={handleChange}
+              required
+            />
+            <input
+              className="border rounded px-3 py-2"
+              name="attachment"
+              type="file"
+              accept="*"
+              onChange={handleChange}
+            />
+            <button
+              className="w-full py-2 px-4 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition mt-2"
+              type="submit"
+              disabled={loading || !poseidon}
+            >
+              {loading ? "Submitting..." : "Submit Proposal"}
+            </button>
+          </form>
+        )}
+        {step === "submitted" && (
+          <div className="flex flex-col items-center gap-2">
+            <div className="text-2xl text-green-600">Submitted securely ✔️</div>
+            <button className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300" onClick={() => setStep("welcome")}>Submit another</button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
