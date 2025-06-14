@@ -1,0 +1,47 @@
+[
+  {
+    "submission_id": "subm-001",
+    "score": 85,
+    "strengths": [
+      "Realistic timeline",
+      "Competitive pricing", 
+      "Strong team credentials"
+    ],
+    "weaknesses": [
+      "Limited innovation",
+      "Minimal environmental considerations"
+    ],
+    "summary": "A solid bid with a realistic timeline and competitive pricing, but lacks innovative approaches and sustainability measures.",
+    "timestamp": "2025-06-14T12:00:00Z"
+  },
+  {
+    "submission_id": "subm-002", 
+    "score": 72,
+    "strengths": [
+      "Innovative technology use",
+      "Detailed risk management plan"
+    ],
+    "weaknesses": [
+      "Aggressive budget assumptions",
+      "Unverified subcontractors"
+    ],
+    "summary": "Promising proposal with innovation and risk management, but budget assumptions are aggressive and subcontractors lack verification.",
+    "timestamp": "2025-06-14T12:05:00Z"
+  },
+  {
+    "submission_id": "subm-003",
+    "score": 91,
+    "strengths": [
+      "Highly innovative approach",
+      "Sustainable design principles",
+      "Experienced project team",
+      "Comprehensive risk mitigation"
+    ],
+    "weaknesses": [
+      "Higher initial cost",
+      "Longer implementation timeline"
+    ],
+    "summary": "Exceptional proposal with cutting-edge technology and sustainability focus. Higher costs are justified by long-term benefits and innovation value.",
+    "timestamp": "2025-06-14T12:10:00Z"
+  }
+]

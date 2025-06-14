@@ -1,0 +1,22 @@
+[
+  {
+    "id": 1,
+    "company_name": "SuperBuild GmbH",
+    "proposal_title": "Green Roof Housing",
+    "budget": 150000,
+    "timeline_weeks": 12,
+    "technical_quality": "Detailed plan with timeline, materials, and risks",
+    "sustainability": "Uses recycled materials and solar panels",
+    "team_experience": "10+ years of experience in similar projects"
+  },
+  {
+    "id": 2,
+    "company_name": "EcoConstruct Ltd.",
+    "proposal_title": "Modular Eco Homes",
+    "budget": 120000,
+    "timeline_weeks": 10,
+    "technical_quality": "Prefabricated modules, rapid assembly, risk mitigation included",
+    "sustainability": "Low-carbon concrete, rainwater harvesting",
+    "team_experience": "Award-winning team, 5 years in green construction"
+  }
+]
