@@ -62,7 +62,7 @@ export default function VotingDashboard() {
           {proposals.map((p) => (
             <div key={p.id} className="border-2 border-blue-100 rounded-xl p-6 bg-blue-50 shadow">
               <div className="font-bold text-xl mb-2 text-blue-800">{p.proposal_title}</div>
-              <div className="text-base text-gray-800 mb-3 whitespace-pre-line">
+              <div className="text-base text-gray-800 mb-3 whitespace-pre-line" style={{ color: "#4D4D4D" }}>
                 {p.ai_evaluation}
               </div>
               <div className="flex gap-6 items-center mb-3">

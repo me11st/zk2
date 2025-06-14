@@ -46,9 +46,9 @@ export default function PublicVoting() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "rgba(0,0,0,0.7)" }}>
+    <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
       <div className="w-full max-w-2xl bg-white shadow-lg p-8" style={{ borderRadius: 4, border: '2px solid #eee' }}>
-        <h1 className="text-2xl font-bold mb-4 text-center" style={{ color: "rgba(0,0,0,0.7)" }}>🖥️ Public Voting - zkTender</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center" style={{ color: "#4D4D4D" }}>🖥️ Public Voting - zkTender</h1>
         <div className="mb-4 flex justify-center">
           {wallet.address ? (
             <button className="px-4 py-2 bg-gray-200 rounded" onClick={wallet.disconnect}>
@@ -65,13 +65,13 @@ export default function PublicVoting() {
           <div className="space-y-6">
             {proposals.map((p) => (
               <div key={p.id} className="border p-4 bg-gray-100" style={{ borderRadius: 2, border: '1.5px solid #ddd' }}>
-                <div className="font-semibold text-lg mb-1" style={{ color: "rgba(0,0,0,0.7)" }}>{p.proposal_title}</div>
-                <div className="text-sm mb-2 whitespace-pre-line" style={{ color: "rgba(0,0,0,0.7)" }}>
+                <div className="font-semibold text-lg mb-1" style={{ color: "#4D4D4D" }}>{p.proposal_title}</div>
+                <div className="text-sm mb-2 whitespace-pre-line" style={{ color: "#4D4D4D" }}>
                   {p.ai_evaluation}
                 </div>
                 <div className="flex gap-4 items-center mb-2">
-                  <span className="text-xs" style={{ color: "rgba(0,0,0,0.7)" }}>Upvotes: {votes[p.id]?.up ?? 0}</span>
-                  <span className="text-xs" style={{ color: "rgba(0,0,0,0.7)" }}>Flags: {votes[p.id]?.flag ?? 0}</span>
+                  <span className="text-xs" style={{ color: "#4D4D4D" }}>Upvotes: {votes[p.id]?.up ?? 0}</span>
+                  <span className="text-xs" style={{ color: "#4D4D4D" }}>Flags: {votes[p.id]?.flag ?? 0}</span>
                 </div>
                 {userVotes[p.id] ? (
                   <div className="text-green-600 text-xs font-semibold">You've already voted ({userVotes[p.id] === "up" ? "Upvoted" : "Flagged"})</div>
@@ -95,7 +95,7 @@ export default function PublicVoting() {
             ))}
           </div>
         ) : (
-          <div className="text-xs text-gray-500 text-center mt-8">Connect wallet to view and vote on proposals</div>
+          <div className="text-xs text-center mt-8" style={{ color: "#666" }}>Connect wallet to view and vote on proposals</div>
         )}
       </div>
     </div>

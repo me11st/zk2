@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    resolveAlias: {
-      canvas: "./empty-module.js",
-    },
-  },
   webpack: (config: any) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
@@ -13,6 +8,7 @@ const nextConfig: NextConfig = {
       net: false,
       tls: false,
       crypto: false,
+      canvas: false,
     };
     
     config.externals.push("pino-pretty", "lokijs", "encoding");

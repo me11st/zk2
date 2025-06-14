@@ -6,6 +6,7 @@ import { buildPoseidon } from "circomlibjs";
 import type { BigNumberish } from "circomlibjs";
 import { connect } from "@argent/get-starknet";
 import { RpcProvider } from "starknet";
+import ProgressIndicator from "./components/ProgressIndicator";
 
 // Initialize a provider for Sepolia testnet
 const sepoliaProvider = new RpcProvider({ nodeUrl: "https://starknet-sepolia.public.blastapi.io/rpc/v0_6" });
@@ -125,9 +126,9 @@ export default function Home() {
         Number(form.innovation)
       ]).toString();
 
-      // Try to POST to the real endpoint, but mock success if it fails
+      // Submit to local API instead of n8n webhook
       try {
-        await fetch("https://kisse.app.n8n.cloud/webhook-test/webhook/zk-tender-submit", {
+        const response = await fetch("http://localhost:3003/api/proposals/submit", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -144,9 +145,31 @@ export default function Home() {
             timestamp: new Date().toISOString()
           }),
         });
-      } catch (e) {
-        // Mock: treat as success for local/dev
-        console.warn("Submission failed, mocking success for local dev.", e);
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Submission failed');
+        }
+
+        console.log('✅ Proposal submitted:', result);
+        
+        // Generate AI evaluation for the submitted proposal
+        await fetch("http://localhost:3003/api/evaluations/generate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            submission_id: result.submission_id
+          }),
+        });
+
+      } catch (e: any) {
+        console.error("Submission failed:", e);
+        alert(`Submission failed: ${e.message || 'Unknown error'}`);
+        setLoading(false);
+        return;
       }
       setStep("submitted");
     } catch (err) {
@@ -245,8 +268,17 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center" style={{ background: "#4D4D4D" }}>
-      <div className="w-full max-w-md" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+    <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
+      {/* Progress Indicator */}
+      <div className="w-full max-w-4xl px-4 mb-8">
+        <ProgressIndicator 
+          currentPhase="submit" 
+          deadline={SUBMISSION_DEADLINE}
+        />
+      </div>
+      
+      {/* Main Content */}
+      <div className="w-full max-w-3xl" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div className="p-8 flex flex-col gap-6">
           {step === "welcome" && (
             <>
@@ -362,7 +394,7 @@ export default function Home() {
               <div className="text-2xl text-center" style={{ color: "#4D4D4D" }}>
                 ✅ Proposal Submitted!
               </div>
-              <p className="text-sm text-center" style={{ color: "#4D4D4D", opacity: 0.7 }}>
+              <p className="text-sm text-center" style={{ color: "#666" }}>
                 Thank you for participating in zkTender. Your submission has been recorded.
               </p>
             </div>
@@ -373,7 +405,7 @@ export default function Home() {
             </div>
           )}
           {!proposalsVisible ? (
-            <div className="text-center" style={{ color: "#4D4D4D", opacity: 0.5, marginTop: 32 }}>
+            <div className="text-center" style={{ color: "#666", marginTop: 32 }}>
               Proposals are hidden until the submission deadline for privacy. Please check back after {SUBMISSION_DEADLINE.toLocaleString()}.
             </div>
           ) : (
@@ -385,34 +417,28 @@ export default function Home() {
           )}
         </div>
       </div>
-      {/* White square button for public voting */}
-      <a
-        href="/public-vote"
-        style={{
-          position: 'fixed',
-          bottom: 32,
-          right: 32,
-          zIndex: 1000,
-          background: '#fff',
-          color: '#4D4D4D',
-          borderRadius: 8,
-          width: 220,
-          height: 64,
-          fontSize: 16,
-          fontWeight: 'bold',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          border: '2px solid #eee',
-          textDecoration: 'none',
-          transition: 'box-shadow 0.2s',
-        }}
-        title="Check zk1 for public voting"
-      >
-        Check zk1 for public voting
-      </a>
+      
+      {/* Navigation Container */}
+      <div className="w-full max-w-3xl mt-6" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
+        <div className="p-6">
+          <div className="flex justify-center gap-4">
+            <a
+              href="/public-vote"
+              className="px-6 py-3 rounded-lg font-semibold"
+              style={{ background: "#4D4D4D", color: "#fff" }}
+            >
+              🗳️ Public Voting
+            </a>
+            <a
+              href="/final-evaluations"
+              className="px-6 py-3 rounded-lg font-semibold"
+              style={{ background: "#4D4D4D", color: "#fff" }}
+            >
+              🏆 Final Results
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
