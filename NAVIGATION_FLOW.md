@@ -46,6 +46,7 @@
 2. **Primary AI evaluation** without the names of the companies starts at 0:01 x+1 date
 2. **Public Voting** (/public-vote) - View proposals, vote with ZK privacy
 3. **Final Results** (/final-evaluations) - See full company disclosure and AI recommendations
-4. **Gov intake** - 10% to final voting
+4. **Gov intake** - e.g. 10% to final voting
+5. **Smart contract execution** - The winning company is paid in **stages**. Each milestone (e.g., 30%, 40%, 30%) is released **after verification** of progress.
 
 The navigation now forms a complete circuit with no dead ends! 🎉
