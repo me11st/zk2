@@ -64,21 +64,21 @@ The zkTender system has been fully integrated with a local API server replacing 
 
 ### 1. Start Backend API
 ```bash
-cd /Users/me11/workin/zk2
+cd /your_folder/zk2
 npm run server
 ```
 API will be available at `http://localhost:3003`
 
 ### 2. Start Frontend
 ```bash
-cd /Users/me11/workin/zk2
+cd /your_folder/zk2
 npm run dev
 ```
 App will be available at `http://localhost:3005`
 
 ### 3. Run Both Simultaneously
 ```bash
-cd /Users/me11/workin/zk2
+cd /your_folder/zk2
 npm run dev:full
 ```
 

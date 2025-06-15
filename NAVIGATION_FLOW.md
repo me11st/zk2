@@ -40,6 +40,8 @@
 2. **🤖 AI Evaluation** - Anonymous AI assessment  
 3. **🗳️ Public Voting** - Community votes with ZK privacy
 4. **🏆 Final Results** - Full disclosure & recommendations
+4. **Gov intake** - e.g. 10% to final voting (just an idea)
+5. **Smart contract execution** - The winning company is paid in **stages**. Each milestone (e.g., 30%, 40%, 30%) is released **after verification** of progress. (just an idea)
 
 ## 🔄 User Journey
 1. **Submit Proposal** (/) - Connect wallet, fill form, submit untill 0:00 h x date.
@@ -47,5 +49,6 @@
 2. **Public Voting** (/public-vote) - View proposals, vote with ZK privacy
 3. **Final Results** (/final-evaluations) - See full company disclosure and AI recommendations
 4. **Gov intake** - 10% to final voting
+5. **Smart contract execution** - The winning company is paid in **stages**. Each milestone (e.g., 30%, 40%, 30%) is released **after verification** of progress.
 
 The navigation now forms a complete circuit with no dead ends! 🎉
