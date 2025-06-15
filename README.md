@@ -3,7 +3,7 @@
 - **Track(s):** Privacy & AI/ML Innovation
 - **Team/Contributors:** mell (Full-Stack Development, UX Design, System Architecture)
 - **Repository:** [https://github.com/me11st]
-- **Demo:** http://localhost:3005 (Local Development)
+- **Demo:** http://localhost:3000 (Local Development)
 
 ## Description (TL;DR)
 zkTender is a privacy-preserving government tender system that combines Zero-Knowledge proofs, AI evaluation, and blockchain technology to create transparent, fair, and tamper-proof public procurement processes. Companies submit proposals anonymously, AI evaluates them without bias, the public votes using ZK privacy, and final results include full disclosure with bias detection.
@@ -147,7 +147,7 @@ npm run dev:full
 
 # Or run separately:
 npm run server  # API server on :3003
-npm run dev     # Frontend on :3005
+npm run dev     # Frontend on :3000
 ```
 
 ## 📊 Demo Workflow
