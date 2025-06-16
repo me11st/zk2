@@ -2,7 +2,7 @@
 
 - **Track(s):** Privacy & AI/ML Innovation
 - **Team/Contributors:** mell (Full-Stack Development, UX Design, System Architecture)
-- **Repository:** [https://github.com/me11st]
+- **Repository:** [https://github.com/me11st/-projects-zk2-](https://github.com/me11st/-projects-zk2-)
 - **Demo:** http://localhost:3000 (Local Development)
 
 ## Description (TL;DR)
@@ -134,6 +134,24 @@ zkTender significantly enhances privacy through multiple layers:
 ### Vision
 Transform public procurement globally by making it transparent, fair, and privacy-preserving. Enable citizens to participate in government decisions while protecting all stakeholders through cutting-edge cryptographic privacy.
 
+## 📜 Fair Use License
+
+**"Free for the people. Funded by the ones with power."**
+
+zkTender operates under an innovative **Fair Use License** that ensures:
+
+🔓 **Free for Civic Use:**
+- Students, activists, civic hackers, grassroots movements
+- Personal, educational, and non-commercial purposes
+- Community-driven improvements welcomed
+
+🏛️ **Paid for Institutional Use:**
+- Government agencies and municipalities
+- NGOs with budgets >€100k, corporations
+- Required licensing supports continued development
+
+This approach democratizes access while ensuring sustainability. [Full License Details](./LICENSE.md)
+
 ---
 
 ## 🚀 Quick Start
@@ -168,3 +186,5 @@ chmod +x demo-workflow.sh
 ```
 
 **Built with ❤️ in one week - from idea to production-ready system** ✨
+
+*"Oh, that's just the beginning 😊" - and indeed it was! What started as a simple concept evolved into a complete privacy-preserving government tender system with real AI integration, democratic participation, and innovative licensing that puts power back in the hands of the people.*
