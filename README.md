@@ -48,7 +48,7 @@ Key innovations:
 - **CORS** - Cross-origin resource sharing
 
 ### AI & Development
-- **OpenAI API** - Ready for real AI evaluation integration
+- **OpenAI GPT-4** - Real AI evaluation with intelligent fallback
 - **Concurrently** - Parallel server management
 - **Node-fetch** - HTTP client for API integration
 
@@ -114,7 +114,7 @@ zkTender significantly enhances privacy through multiple layers:
 ## What's Next
 
 ### Immediate (Next 2 Weeks)
-- **Real OpenAI Integration**: Replace mock AI with GPT-4 evaluation
+- **Enhanced AI Features**: Multi-modal evaluation (documents, presentations)
 - **Security Audit**: Professional penetration testing
 - **Mobile Optimization**: Responsive design improvements
 - **Demo Video**: Professional demonstration for hackathons
@@ -142,6 +142,10 @@ Transform public procurement globally by making it transparent, fair, and privac
 # Install dependencies
 npm install
 
+# Set up OpenAI for real AI evaluation (optional)
+./setup-openai.sh
+export OPENAI_API_KEY='sk-your-key-here'
+
 # Start both servers
 npm run dev:full
 
@@ -149,6 +153,11 @@ npm run dev:full
 npm run server  # API server on :3003
 npm run dev     # Frontend on :3000
 ```
+
+### AI Features
+- **With OpenAI API Key**: GPT-4 powered intelligent proposal evaluation
+- **Without API Key**: Intelligent fallback system maintains full functionality
+- **Real-time AI Analysis**: Anonymized initial evaluations + comprehensive final assessments
 
 ## 📊 Demo Workflow
 
