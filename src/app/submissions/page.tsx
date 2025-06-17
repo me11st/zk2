@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ProgressIndicator from "../components/ProgressIndicator";
+import InstanceSelector from "../components/InstanceSelector";
 
 interface SystemState {
   current_phase: string;
@@ -40,17 +41,18 @@ export default function SubmissionsPage() {
   const [systemState, setSystemState] = useState<SystemState | null>(null);
   const [revealedProposals, setRevealedProposals] = useState<RevealedProposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentInstance, setCurrentInstance] = useState('zk1');
 
   useEffect(() => {
-    // Fetch public system state (only commitment hashes visible)
-    fetch("http://localhost:3003/api/proposals/public-state")
+    // Fetch instance-specific public state
+    fetch(`http://localhost:3003/api/instances/${currentInstance}/public-state`)
       .then((res) => res.json())
       .then((data) => {
         setSystemState(data);
         
         // If in reveal phase or later, also fetch revealed proposals
         if (data.current_phase === 'reveal' || data.current_phase === 'final') {
-          return fetch("http://localhost:3003/api/proposals/revealed").then(res => res.json());
+          return fetch(`http://localhost:3003/api/instances/${currentInstance}/revealed`).then(res => res.json());
         }
         return Promise.resolve({ revealed_proposals: [] });
       })
@@ -64,7 +66,7 @@ export default function SubmissionsPage() {
         console.error("Failed to load submission data:", err);
         setLoading(false);
       });
-  }, []);
+  }, [currentInstance]);
 
   if (loading) {
     return (
@@ -86,6 +88,13 @@ export default function SubmissionsPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
+      <div className="w-full max-w-4xl px-4 mb-4">
+        <InstanceSelector 
+          currentInstance={currentInstance}
+          onInstanceChange={setCurrentInstance}
+        />
+      </div>
+      
       <div className="w-full max-w-4xl px-4 mb-8">
         <ProgressIndicator currentPhase="submit" />
       </div>
@@ -93,7 +102,7 @@ export default function SubmissionsPage() {
       <div className="w-full max-w-7xl" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div className="p-8">
           <h1 className="text-3xl font-extrabold mb-6 text-center" style={{ color: "#4D4D4D" }}>
-            🔒 zkTender - Zero Knowledge Privacy Mode
+            🔒 zkTender {currentInstance.toUpperCase()} - Zero Knowledge Privacy Mode
           </h1>
           
           <div className="mb-8 p-4 rounded-lg" style={{ background: "#f8f9fa", border: "2px solid #e9ecef" }}>

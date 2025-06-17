@@ -5,11 +5,14 @@ import { buildPoseidon } from "circomlibjs";
 import type { BigNumberish } from "circomlibjs";
 import { connect } from "@argent/get-starknet";
 import ProgressIndicator from "./components/ProgressIndicator";
+import InstanceSelector from "./components/InstanceSelector";
 
 export default function Home() {
   const [step, setStep] = useState<"welcome" | "connected" | "zk1" | "zk2" | "zk3" | "submitted">("welcome");
   const [wallet, setWallet] = useState<string | null>(null);
   const [account, setAccount] = useState<any>(null); // for real wallet account
+  const [currentInstance, setCurrentInstance] = useState("zk2"); // Default to zk2 (submission phase)
+  const [instances, setInstances] = useState<any[]>([]);
   const [form, setForm] = useState({
     name: "",
     feasibility: "",
@@ -36,6 +39,7 @@ export default function Home() {
   const [proposalsVisible, setProposalsVisible] = useState(false);
   const SUBMISSION_DEADLINE = new Date('2025-07-01T00:00:00Z'); // Example deadline
 
+  // Load available instances
   useEffect(() => {
     const loadPoseidon = async () => {
       const poseidonInstance = await buildPoseidon();
@@ -169,7 +173,7 @@ export default function Home() {
       });
 
       // Submit ONLY commitment hash - NO SENSITIVE DATA
-      const response = await fetch("http://localhost:3003/api/proposals/commit", {
+      const response = await fetch(`http://localhost:3003/api/instances/${currentInstance}/proposals/commit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -286,6 +290,15 @@ export default function Home() {
         <ProgressIndicator 
           currentPhase="submit" 
           deadline={SUBMISSION_DEADLINE}
+        />
+      </div>
+
+      {/* Instance Selector */}
+      <div className="w-full max-w-4xl px-4 mb-6">
+        <InstanceSelector 
+          currentInstance={currentInstance}
+          onInstanceChange={setCurrentInstance}
+          showDescription={true}
         />
       </div>
       

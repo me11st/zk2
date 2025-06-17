@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "@argent/get-starknet";
 import ProgressIndicator from "../components/ProgressIndicator";
+import InstanceSelector from "../components/InstanceSelector";
 
 // Replace mock wallet connect with real StarkNet wallet connect
 export default function PublicVotingPage() {
@@ -18,6 +19,7 @@ export default function PublicVotingPage() {
   const [loading, setLoading] = useState(false);
   const [submittingVotes, setSubmittingVotes] = useState(false);
   const [balance, setBalance] = useState(1000); // Mock balance
+  const [currentInstance, setCurrentInstance] = useState('zk1');
 
   // Function to format original proposal data (anonymized)
   const formatOriginalProposal = (proposal: any) => {
@@ -52,7 +54,7 @@ export default function PublicVotingPage() {
   useEffect(() => {
     if (wallet) {
       // Load revealed proposals for voting
-      fetch("http://localhost:3003/api/proposals/revealed")
+      fetch(`http://localhost:3003/api/instances/${currentInstance}/revealed`)
         .then((res) => res.json())
         .then((data) => {
           const revealedProposals = data.revealed_proposals || [];
@@ -66,7 +68,7 @@ export default function PublicVotingPage() {
           setVotes(initialVotes);
           
           // Load current voting statistics
-          return fetch("http://localhost:3003/api/votes/statistics");
+          return fetch(`http://localhost:3003/api/instances/${currentInstance}/votes/statistics`);
         })
         .then((res) => res.json())
         .then((statsData) => {
@@ -89,7 +91,7 @@ export default function PublicVotingPage() {
       setVotes({});
       setUserVotes({});
     }
-  }, [wallet]);
+  }, [wallet, currentInstance]);
 
   const connectWallet = async () => {
     setLoading(true);
@@ -148,15 +150,15 @@ export default function PublicVotingPage() {
       for (const [submission_id, vote_type] of Object.entries(pendingVotes)) {
         const voteData = {
           submission_id,
-          voter_address: wallet,
-          vote_type: vote_type === "up" ? "support" : "concern", // Map to API format
-          zk_proof: zkProof.proof,
+          vote_commitment: zkProof.commitment,
           nullifier: zkProof.nullifier + "_" + submission_id, // Make nullifier unique per vote
-          commitment: zkProof.commitment,
-          stake_amount: 1 // 1 coin per vote
+          zk_vote_proof: zkProof.proof,
+          vote_type: vote_type === "up" ? "support" : "concern", // Map to API format
+          stake_commitment: zkProof.commitment, // Use same commitment for stake
+          voter_address: wallet // Include voter address for database
         };
 
-        const voteResponse = await fetch("http://localhost:3003/api/votes/anonymous", {
+        const voteResponse = await fetch(`http://localhost:3003/api/instances/${currentInstance}/votes/anonymous`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -265,13 +267,30 @@ export default function PublicVotingPage() {
         return;
       }
 
-      // Mock API call for comment submission
-      console.log("💬 Comment submitted anonymously:", {
+      // Submit comment to the API
+      const commentData = {
         submission_id,
-        comment_length: comment.length,
+        comment_text: comment,
+        nullifier: zkProof.nullifier + "_comment_" + submission_id,
         zk_proof: zkProof.proof,
-        timestamp: new Date().toISOString()
+        commitment: zkProof.commitment,
+        commenter_address: wallet
+      };
+
+      const commentResponse = await fetch(`http://localhost:3003/api/instances/${currentInstance}/comments/anonymous`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(commentData),
       });
+
+      if (!commentResponse.ok) {
+        const error = await commentResponse.json();
+        throw new Error(error.error || 'Comment submission failed');
+      }
+
+      console.log("💬 Comment submitted anonymously via API");
 
       setSubmittedComments(prev => ({
         ...prev,
@@ -296,6 +315,14 @@ export default function PublicVotingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
+      {/* Instance Selector */}
+      <div className="w-full max-w-4xl px-4 mb-4">
+        <InstanceSelector 
+          currentInstance={currentInstance}
+          onInstanceChange={setCurrentInstance}
+        />
+      </div>
+      
       {/* Progress Indicator */}
       <div className="w-full max-w-4xl px-4 mb-8">
         <ProgressIndicator currentPhase="voting" />
@@ -304,7 +331,7 @@ export default function PublicVotingPage() {
       {/* Main Content */}
       <div className="w-full max-w-3xl" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div className="p-10">
-          <h1 className="text-3xl font-extrabold mb-6 text-center" style={{ color: "#4D4D4D" }}>🖥️ Public Voting Dashboard - zkTender</h1>
+          <h1 className="text-3xl font-extrabold mb-6 text-center" style={{ color: "#4D4D4D" }}>🖥️ Public Voting Dashboard - {currentInstance.toUpperCase()}</h1>
           <div className="mb-6 flex justify-center">
             {wallet ? (
               <div className="flex items-center gap-4">

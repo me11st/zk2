@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import ProgressIndicator from "../components/ProgressIndicator";
+import InstanceSelector from "../components/InstanceSelector";
 
 interface SystemState {
   current_phase: string;
@@ -41,12 +42,13 @@ export default function FinalEvaluationsPage() {
   const [revealedProposals, setRevealedProposals] = useState<RevealedProposal[]>([]);
   const [votingStats, setVotingStats] = useState<VotingStats[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentInstance, setCurrentInstance] = useState('zk1');
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:3003/api/proposals/public-state").then(res => res.json()),
-      fetch("http://localhost:3003/api/proposals/revealed").then(res => res.json()),
-      fetch("http://localhost:3003/api/votes/statistics").then(res => res.json())
+      fetch(`http://localhost:3003/api/instances/${currentInstance}/public-state`).then(res => res.json()),
+      fetch(`http://localhost:3003/api/instances/${currentInstance}/revealed`).then(res => res.json()),
+      fetch(`http://localhost:3003/api/instances/${currentInstance}/votes/statistics`).then(res => res.json())
     ])
     .then(([systemData, revealedData, votingData]) => {
       setSystemState(systemData);
@@ -58,7 +60,7 @@ export default function FinalEvaluationsPage() {
       console.error("Failed to load final results data:", err);
       setLoading(false);
     });
-  }, []);
+  }, [currentInstance]);
 
   if (loading) {
     return (
@@ -107,6 +109,13 @@ export default function FinalEvaluationsPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
+      <div className="w-full max-w-4xl px-4 mb-4">
+        <InstanceSelector 
+          currentInstance={currentInstance}
+          onInstanceChange={setCurrentInstance}
+        />
+      </div>
+      
       <div className="w-full max-w-4xl px-4 mb-8">
         <ProgressIndicator currentPhase="results" />
       </div>
@@ -114,7 +123,7 @@ export default function FinalEvaluationsPage() {
       <div className="w-full max-w-7xl" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div className="p-8">
           <h1 className="text-3xl font-extrabold mb-6 text-center" style={{ color: "#4D4D4D" }}>
-            🏆 Final Results for zk1 - Complete Evaluation
+            🏆 Final Results for {currentInstance.toUpperCase()} - Complete Evaluation
           </h1>
           
           <div className="mb-8 p-4 rounded-lg" style={{ background: "#f8f9fa", border: "2px solid #e9ecef" }}>
@@ -122,7 +131,7 @@ export default function FinalEvaluationsPage() {
               <div>
                 <div className="text-sm text-gray-600">Current Phase</div>
                 <div className="text-lg font-bold" style={{ color: "#4D4D4D" }}>
-                  {systemState?.current_phase.toUpperCase()}
+                  {systemState?.current_phase?.toUpperCase() || 'LOADING...'}
                 </div>
               </div>
               <div>
