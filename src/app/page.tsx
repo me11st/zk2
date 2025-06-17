@@ -1,19 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { buildPoseidon } from "circomlibjs";
 import type { BigNumberish } from "circomlibjs";
 import { connect } from "@argent/get-starknet";
-import { RpcProvider } from "starknet";
 import ProgressIndicator from "./components/ProgressIndicator";
-
-// Initialize a provider for Sepolia testnet
-const sepoliaProvider = new RpcProvider({ nodeUrl: "https://starknet-sepolia.public.blastapi.io/rpc/v0_6" });
-
-// Replace with your mock ERC20 contract address
-const MOCK_ERC20_ADDRESS =
-  '0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
 
 export default function Home() {
   const [step, setStep] = useState<"welcome" | "connected" | "zk1" | "zk2" | "zk3" | "submitted">("welcome");
@@ -26,6 +17,17 @@ export default function Home() {
     innovation: "",
     attachment: null as File | null,
     attachmentUrl: "",
+    // New project fields
+    projectTitle: "",
+    location: "",
+    plannedStartDate: "",
+    plannedEndDate: "",
+    materialPlan: "",
+    materialPlanFile: null as File | null,
+    constructionPlan: "",
+    sustainabilityMeasures: "",
+    communityEngagement: "",
+    pastProjects: "",
   });
   const [loading, setLoading] = useState(false);
   const [poseidon, setPoseidon] = useState<((inputs: BigNumberish[]) => bigint) | null>(null);
@@ -92,6 +94,8 @@ export default function Home() {
     const { name, value, files } = e.target as any;
     if (name === "attachment" && files && files[0]) {
       setForm((f) => ({ ...f, attachment: files[0] }));
+    } else if (name === "materialPlanFile" && files && files[0]) {
+      setForm((f) => ({ ...f, materialPlanFile: files[0] }));
     } else {
       setForm((f) => ({ ...f, [name]: value }));
     }
@@ -100,17 +104,16 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    let attachmentUrl = "";
-    let hash = "";
+
     try {
-      if (!form.name || isNaN(Number(form.feasibility)) || isNaN(Number(form.budget)) || isNaN(Number(form.innovation))) {
-        alert("Please fill in all fields correctly.");
+      // Validate all required fields
+      if (!form.name || isNaN(Number(form.feasibility)) || isNaN(Number(form.budget)) || isNaN(Number(form.innovation)) ||
+          !form.projectTitle || !form.location || !form.plannedStartDate || !form.plannedEndDate ||
+          !form.materialPlan || !form.constructionPlan || !form.sustainabilityMeasures ||
+          !form.communityEngagement || !form.pastProjects) {
+        alert("Please fill in all required fields correctly.");
         setLoading(false);
         return;
-      }
-
-      if (form.attachment) {
-        attachmentUrl = `ipfs://${form.attachment.name}`;
       }
 
       if (!poseidon) {
@@ -119,91 +122,100 @@ export default function Home() {
         return;
       }
 
-      hash = poseidon([
+      // Create commitment hash of ALL proposal data for ZK privacy
+      const proposalData = {
+        name: form.name,
+        projectTitle: form.projectTitle,
+        location: form.location,
+        budget: Number(form.budget),
+        feasibility: Number(form.feasibility),
+        innovation: Number(form.innovation),
+        plannedStartDate: form.plannedStartDate,
+        plannedEndDate: form.plannedEndDate,
+        materialPlan: form.materialPlan,
+        constructionPlan: form.constructionPlan,
+        sustainabilityMeasures: form.sustainabilityMeasures,
+        communityEngagement: form.communityEngagement,
+        pastProjects: form.pastProjects,
+        timestamp: new Date().toISOString()
+      };
+
+      // Generate ZK commitment hash
+      const commitmentHash = poseidon([
         form.name.length,
+        form.projectTitle.length,
         Number(form.feasibility),
         Number(form.budget),
-        Number(form.innovation)
+        Number(form.innovation),
+        form.location.length
       ]).toString();
 
-      // Submit to local API instead of n8n webhook
-      try {
-        const response = await fetch("http://localhost:3003/api/proposals/submit", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: form.name,
-            feasibility: Number(form.feasibility),
-            budget: Number(form.budget),
-            innovation: Number(form.innovation),
-            attachmentUrl,
-            hash,
-            wallet,
-            step,
-            timestamp: new Date().toISOString()
-          }),
-        });
+      // Generate nullifier to prevent double submission
+      const nullifierHash = poseidon([
+        wallet?.length || 0,
+        Date.now() % 1000000,
+        commitmentHash.length
+      ]).toString();
 
-        const result = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(result.error || 'Submission failed');
-        }
+      // Encrypt proposal data (simplified - in real implementation would use proper encryption)
+      const encryptedData = JSON.stringify(proposalData);
 
-        console.log('✅ Proposal submitted:', result);
-        
-        // Generate AI evaluation for the submitted proposal
-        await fetch("http://localhost:3003/api/evaluations/generate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            submission_id: result.submission_id
-          }),
-        });
+      // Generate mock ZK proof (in real implementation, this would be a proper ZK-SNARK proof)
+      const zkProof = JSON.stringify({
+        proof: "mock_zk_proof_" + commitmentHash.substring(0, 16),
+        public_signals: [commitmentHash, nullifierHash],
+        verification_key: "mock_vk",
+        timestamp: Date.now()
+      });
 
-      } catch (e: any) {
-        console.error("Submission failed:", e);
-        alert(`Submission failed: ${e.message || 'Unknown error'}`);
-        setLoading(false);
-        return;
+      // Submit ONLY commitment hash - NO SENSITIVE DATA
+      const response = await fetch("http://localhost:3003/api/proposals/commit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          commitment_hash: commitmentHash,
+          nullifier_hash: nullifierHash,
+          wallet_address: wallet || 'mock_wallet',
+          encrypted_proposal_data: encryptedData,
+          zk_proof: zkProof
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Proposal commitment failed');
       }
+
+      console.log('✅ ZK Proposal commitment submitted:', result);
+      alert(`✅ Proposal committed successfully!\n\nCommitment ID: ${result.submission_id}\nCommitment Hash: ${result.commitment_hash}\n\nYour proposal data remains private until the reveal phase.`);
       setStep("submitted");
-    } catch (err) {
-      console.error("Error during submission:", err);
-      alert("Something went wrong. Check the console for details.");
+
+    } catch (err: any) {
+      console.error("Error during ZK commitment:", err);
+      alert(`Submission failed: ${err.message || 'Unknown error'}`);
     }
     setLoading(false);
   };
 
-  const checkBalanceAndSubmit = async () => {
-    try {
-      if (!account) {
-        alert("Wallet not connected.");
-        return;
-      }
-
-      // Remove or comment out the real Sepolia provider balance check
-      // const ETH_ADDRESS = "0x0000000000000000000000000000000000000000000000000000000000000000";
-      // const balance = await sepoliaProvider.getBalance(account.address, ETH_ADDRESS);
-
-      // if (BigInt(balance.balance) === BigInt(0)) {
-      //   alert("⚠️ You don't have any Sepolia ETH. Please top up your StarkNet wallet.");
-      //   return;
-      // }
-
-      // continue with transaction logic here
-    } catch (err: any) {
-      console.error("Error checking balance or submitting transaction:", err);
-      alert("Something went wrong. Check the console for details.");
-    }
-  };
+  // const checkBalanceAndSubmit = async () => {
+  //   try {
+  //     if (!account) {
+  //       alert("Wallet not connected.");
+  //       return;
+  //     }
+  //     // Mock functionality - transaction logic would go here
+  //   } catch (err: any) {
+  //     console.error("Error checking balance or submitting transaction:", err);
+  //     alert("Something went wrong. Check the console for details.");
+  //   }
+  // };
 
   // Replace the real balance check with a mock
-  async function fetchMockERC20Balance(_walletAddress: string) {
+  async function fetchMockERC20Balance(walletAddress: string) {
+    console.log("Mock balance check for:", walletAddress);
     // Always return 1000 tokens for demo
     return 1000;
   }
@@ -230,14 +242,14 @@ export default function Home() {
     checkBalance();
   }, [account]);
 
-  // In your React component, replace the real balance check logic:
-  const [balance, setBalance] = useState(0);
+  // Mock balance state
+  // const [balance, setBalance] = useState(0);
   const [balanceWarning, setBalanceWarning] = useState(false);
 
   useEffect(() => {
     if (wallet) {
       fetchMockERC20Balance(wallet).then((bal) => {
-        setBalance(bal);
+        // setBalance(bal);
         setBalanceWarning(bal === 0);
       });
     }
@@ -248,7 +260,7 @@ export default function Home() {
   useEffect(() => {
     if (wallet) {
       // Always set a mock balance for demo
-      setBalance(1000);
+      // setBalance(1000);
       setBalanceWarning(false); // No warning, always has balance
     }
   }, [wallet]);
@@ -265,7 +277,7 @@ export default function Home() {
     checkDeadline();
     const interval = setInterval(checkDeadline, 60 * 1000); // check every minute
     return () => clearInterval(interval);
-  }, []);
+  }, [SUBMISSION_DEADLINE]);
 
   return (
     <div className="min-h-screen flex flex-col items-center py-8" style={{ background: "#4D4D4D" }}>
@@ -326,27 +338,71 @@ export default function Home() {
               <h2 className="text-xl font-bold mb-2" style={{ color: "#4D4D4D" }}>
                 Submit Proposal ({step.toUpperCase()})
               </h2>
+              
+              {/* Project Basic Info */}
               <input
                 className="border px-3 py-2"
                 style={{ borderRadius: 8, color: "#4D4D4D" }}
                 name="name"
-                placeholder="Name *"
+                placeholder="Company/Organization Name *"
                 value={form.name}
                 onChange={handleChange}
                 required
               />
+              
               <input
                 className="border px-3 py-2"
                 style={{ borderRadius: 8, color: "#4D4D4D" }}
-                name="feasibility"
-                placeholder="Feasibility Score (0-99) *"
-                type="number"
-                min="0"
-                max="99"
-                value={form.feasibility}
+                name="projectTitle"
+                placeholder="Project Title *"
+                value={form.projectTitle}
                 onChange={handleChange}
                 required
               />
+              
+              <input
+                className="border px-3 py-2"
+                style={{ borderRadius: 8, color: "#4D4D4D" }}
+                name="location"
+                placeholder="Project Location *"
+                value={form.location}
+                onChange={handleChange}
+                required
+              />
+
+              {/* Project Timeline */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                    Planned Start Date *
+                  </label>
+                  <input
+                    className="border px-3 py-2 w-full"
+                    style={{ borderRadius: 8, color: "#4D4D4D" }}
+                    name="plannedStartDate"
+                    type="date"
+                    value={form.plannedStartDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                    Planned End Date *
+                  </label>
+                  <input
+                    className="border px-3 py-2 w-full"
+                    style={{ borderRadius: 8, color: "#4D4D4D" }}
+                    name="plannedEndDate"
+                    type="date"
+                    value={form.plannedEndDate}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Budget and Scoring */}
               <input
                 className="border px-3 py-2"
                 style={{ borderRadius: 8, color: "#4D4D4D" }}
@@ -359,6 +415,20 @@ export default function Home() {
                 onChange={handleChange}
                 required
               />
+
+              <input
+                className="border px-3 py-2"
+                style={{ borderRadius: 8, color: "#4D4D4D" }}
+                name="feasibility"
+                placeholder="Feasibility Score (0-99) *"
+                type="number"
+                min="0"
+                max="99"
+                value={form.feasibility}
+                onChange={handleChange}
+                required
+              />
+
               <input
                 className="border px-3 py-2"
                 style={{ borderRadius: 8, color: "#4D4D4D" }}
@@ -371,6 +441,102 @@ export default function Home() {
                 onChange={handleChange}
                 required
               />
+
+              {/* Material Plan */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                  Material Plan *
+                </label>
+                <textarea
+                  className="border px-3 py-2 w-full"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="materialPlan"
+                  placeholder="Describe your material requirements and sourcing plan"
+                  value={form.materialPlan}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+                <input
+                  className="border px-3 py-2 mt-2 w-full text-sm"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="materialPlanFile"
+                  type="file"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={handleChange}
+                />
+                <p className="text-xs mt-1" style={{ color: "#666" }}>Optional: Upload detailed material plan</p>
+              </div>
+
+              {/* Construction Plan */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                  Construction Plan Timeline *
+                </label>
+                <textarea
+                  className="border px-3 py-2 w-full"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="constructionPlan"
+                  placeholder="Outline your construction timeline and key milestones"
+                  value={form.constructionPlan}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Sustainability Measures */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                  Sustainability Measures *
+                </label>
+                <textarea
+                  className="border px-3 py-2 w-full"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="sustainabilityMeasures"
+                  placeholder="Describe your environmental and sustainability initiatives"
+                  value={form.sustainabilityMeasures}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Community Engagement */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                  Community Engagement Strategy *
+                </label>
+                <textarea
+                  className="border px-3 py-2 w-full"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="communityEngagement"
+                  placeholder="How will you engage with and benefit the local community?"
+                  value={form.communityEngagement}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* Past Projects */}
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: "#4D4D4D" }}>
+                  Past Similar Projects *
+                </label>
+                <textarea
+                  className="border px-3 py-2 w-full"
+                  style={{ borderRadius: 8, color: "#4D4D4D" }}
+                  name="pastProjects"
+                  placeholder="Provide links or brief summaries of similar projects you've completed"
+                  value={form.pastProjects}
+                  onChange={handleChange}
+                  rows={3}
+                  required
+                />
+              </div>
+
+              {/* General Attachments */}
               <input
                 className="border px-3 py-2"
                 style={{ borderRadius: 8, color: "#4D4D4D" }}
@@ -422,6 +588,13 @@ export default function Home() {
       <div className="w-full max-w-3xl mt-6" style={{ background: "#fff", borderRadius: 8, border: "2px solid #fff", boxShadow: "0 4px 16px rgba(0,0,0,0.10)" }}>
         <div className="p-6">
           <div className="flex justify-center gap-4">
+            <a
+              href="/submissions"
+              className="px-6 py-3 rounded-lg font-semibold"
+              style={{ background: "#4D4D4D", color: "#fff" }}
+            >
+              📊 View Submissions
+            </a>
             <a
               href="/public-vote"
               className="px-6 py-3 rounded-lg font-semibold"

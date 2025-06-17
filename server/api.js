@@ -41,8 +41,41 @@ db.serialize(() => {
     wallet_address TEXT NOT NULL,
     step TEXT NOT NULL,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-    status TEXT DEFAULT 'submitted'
+    status TEXT DEFAULT 'submitted',
+    project_title TEXT,
+    location TEXT,
+    planned_start_date TEXT,
+    planned_end_date TEXT,
+    material_plan TEXT,
+    material_plan_file_url TEXT,
+    construction_plan TEXT,
+    sustainability_measures TEXT,
+    community_engagement TEXT,
+    past_projects TEXT
   )`);
+
+  // Add new columns to existing table if they don't exist
+  const newColumns = [
+    'project_title TEXT',
+    'location TEXT', 
+    'planned_start_date TEXT',
+    'planned_end_date TEXT',
+    'material_plan TEXT',
+    'material_plan_file_url TEXT',
+    'construction_plan TEXT',
+    'sustainability_measures TEXT',
+    'community_engagement TEXT',
+    'past_projects TEXT'
+  ];
+  
+  newColumns.forEach(column => {
+    const columnName = column.split(' ')[0];
+    db.run(`ALTER TABLE proposals ADD COLUMN ${column}`, (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.log(`Column ${columnName} already exists or other error:`, err.message);
+      }
+    });
+  });
 
   // Table 2: AI Evaluations (AI analysis results)
   db.run(`CREATE TABLE IF NOT EXISTS ai_evaluations (
@@ -119,7 +152,18 @@ app.post('/api/proposals/submit', async (req, res) => {
       hash,
       wallet,
       step,
-      timestamp
+      timestamp,
+      // New project fields
+      projectTitle,
+      location,
+      plannedStartDate,
+      plannedEndDate,
+      materialPlan,
+      materialPlanFileUrl,
+      constructionPlan,
+      sustainabilityMeasures,
+      communityEngagement,
+      pastProjects
     } = req.body;
 
     // Generate unique submission ID
@@ -128,9 +172,15 @@ app.post('/api/proposals/submit', async (req, res) => {
     // Insert proposal
     db.run(
       `INSERT INTO proposals (submission_id, name, feasibility, budget, innovation, 
-       attachment_url, hash, wallet_address, step, timestamp) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [submission_id, name, feasibility, budget, innovation, attachmentUrl, hash, wallet, step, timestamp],
+       attachment_url, hash, wallet_address, step, timestamp,
+       project_title, location, planned_start_date, planned_end_date,
+       material_plan, material_plan_file_url, construction_plan,
+       sustainability_measures, community_engagement, past_projects) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [submission_id, name, feasibility, budget, innovation, attachmentUrl, hash, wallet, step, timestamp,
+       projectTitle, location, plannedStartDate, plannedEndDate,
+       materialPlan, materialPlanFileUrl, constructionPlan,
+       sustainabilityMeasures, communityEngagement, pastProjects],
       function(err) {
         if (err) {
           console.error('Error inserting proposal:', err);
@@ -160,6 +210,26 @@ app.post('/api/proposals/submit', async (req, res) => {
     console.error('Proposal submission error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// 1.1. Get All Proposals
+app.get('/api/proposals', (req, res) => {
+  db.all(
+    `SELECT submission_id, name, project_title, location, feasibility, budget, innovation,
+     planned_start_date, planned_end_date, material_plan, construction_plan, 
+     sustainability_measures, community_engagement, past_projects,
+     attachment_url, wallet_address, step, timestamp, status
+     FROM proposals ORDER BY timestamp DESC`,
+    [],
+    (err, rows) => {
+      if (err) {
+        console.error('Error fetching proposals:', err);
+        return res.status(500).json({ error: 'Failed to fetch proposals' });
+      }
+
+      res.json(rows);
+    }
+  );
 });
 
 // 2. Get AI Evaluations (replaces Supabase fetch)

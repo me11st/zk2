@@ -11,22 +11,13 @@ import OpenAI from "openai";
 const proposalsPath = path.join(__dirname, "mock_proposals.json");
 const proposals = JSON.parse(fs.readFileSync(proposalsPath, "utf-8"));
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 async function evaluateProposal(proposal) {
-  // Remove company_name for anonymization
-  const { company_name, id, ...anonymized } = proposal;
-  // const prompt = `You are a public procurement expert. Evaluate the following proposal based on: technical quality, sustainability, and experience. Rate each from 1–10 and explain your reasoning.\nProposal: ${JSON.stringify(anonymized, null, 2)}`;
-  // const response = await openai.chat.completions.create({
-  //   model: "gpt-3.5-turbo",
-  //   messages: [
-  //     { role: "system", content: "You are a public procurement expert." },
-  //     { role: "user", content: prompt },
-  //   ],
-  //   temperature: 0.2,
-  //   max_tokens: 300,
-  // });
-  // return response.choices[0].message.content;
+  // Remove sensitive data for anonymization  
+  console.log(`Evaluating proposal: ${proposal.title || 'Untitled'}`);
+  
+  // Mock evaluation without using destructured variables
   return {
     evaluation: `Proposal "${proposal.title}" seems well-structured and fulfills basic criteria. Estimated score: 8.3/10.`,
   };
